@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GGHN.DigitalLearning.Api/GGHN.DigitalLearning.Api.csproj" />
+    <Project Path="src/GGHN.DigitalLearning.Application/GGHN.DigitalLearning.Application.csproj" />
+    <Project Path="src/GGHN.DigitalLearning.Domain/GGHN.DigitalLearning.Domain.csproj" />
+    <Project Path="src/GGHN.DigitalLearning.Infrastructure/GGHN.DigitalLearning.Infrastructure.csproj" />
+  </Folder>
+</Solution>
