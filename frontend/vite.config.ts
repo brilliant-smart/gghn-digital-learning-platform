@@ -1,10 +1,8 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { nitro } from "nitro/vite";
 import type { Plugin } from "vite";
 import http from "http";
 
-// Custom Vite plugin to proxy /api requests to the .NET backend.
-// This must be registered in the pre-phase (before TanStack Start's catch-all
-// middleware) because TanStack Start intercepts all requests and never calls next().
 const apiProxyPlugin: Plugin = {
   name: "api-proxy",
   configureServer(server) {
@@ -38,13 +36,8 @@ const apiProxyPlugin: Plugin = {
 };
 
 export default defineConfig({
-  plugins: [apiProxyPlugin],
+  plugins: [apiProxyPlugin, nitro({ preset: "vercel" })],
   cloudflare: false,
-  tanstackStart: {
-    server: {
-      preset: "vercel",
-    },
-  },
   vite: {
     server: {
       proxy: {
