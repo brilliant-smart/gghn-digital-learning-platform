@@ -68,7 +68,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.OnRejected = async (context, ct) =>
     {
-        context.HttpContext.Response.ContentType = "application/json";
+        context.HttpContext.Response.ContentType = "application/problem+json";
         await context.HttpContext.Response.WriteAsJsonAsync(new
         {
             type = "https://tools.ietf.org/html/rfc6585#section-4",

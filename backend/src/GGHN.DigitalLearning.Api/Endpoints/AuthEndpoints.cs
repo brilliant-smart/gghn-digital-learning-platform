@@ -22,15 +22,8 @@ public static class AuthEndpoints
 
         group.MapPost("/login", async (LoginRequest request, IAuthService authService) =>
         {
-            try
-            {
-                var result = await authService.LoginAsync(request);
-                return Results.Ok(result);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Results.Unauthorized();
-            }
+            var result = await authService.LoginAsync(request);
+            return Results.Ok(result);
         })
         .WithSummary("Login and get JWT token")
         .AllowAnonymous()
@@ -38,15 +31,8 @@ public static class AuthEndpoints
 
         group.MapPost("/refresh", async (RefreshTokenRequest request, IAuthService authService) =>
         {
-            try
-            {
-                var result = await authService.RefreshTokenAsync(request.RefreshToken);
-                return Results.Ok(result);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Results.Unauthorized();
-            }
+            var result = await authService.RefreshTokenAsync(request.RefreshToken);
+            return Results.Ok(result);
         })
         .WithSummary("Refresh access token using a valid refresh token")
         .AllowAnonymous()
@@ -58,15 +44,8 @@ public static class AuthEndpoints
                 ?? user.FindFirst("sub")?.Value
                 ?? throw new UnauthorizedAccessException();
 
-            try
-            {
-                var result = await authService.GetCurrentUserAsync(userId);
-                return Results.Ok(result);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
+            var result = await authService.GetCurrentUserAsync(userId);
+            return Results.Ok(result);
         })
         .WithSummary("Get current user profile")
         .RequireAuthorization();
@@ -82,6 +61,15 @@ public static class AuthEndpoints
         })
         .WithSummary("Update current user profile")
         .RequireAuthorization();
+
+        group.MapPost("/resend-verification", async (ResendVerificationRequest request, IAuthService authService) =>
+        {
+            await authService.ResendEmailConfirmationAsync(request.Email);
+            return Results.Ok(new { message = "If an account with that email exists, a verification link has been sent." });
+        })
+        .WithSummary("Resend email verification link")
+        .AllowAnonymous()
+        .RequireRateLimiting("auth-register");
 
         return endpoints;
     }

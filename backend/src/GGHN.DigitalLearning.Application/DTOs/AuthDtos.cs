@@ -92,3 +92,9 @@ public class UpdateProfileRequest
     [MaxLength(100)]
     public string? Country { get; set; }
 }
+
+public class ResendVerificationRequest
+{
+    [Required, EmailAddress, MaxLength(256)]
+    public string Email { get; set; } = string.Empty;
+}

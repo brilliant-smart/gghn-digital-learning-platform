@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using GGHN.DigitalLearning.Application.DTOs;
+using GGHN.DigitalLearning.Application.Exceptions;
 using GGHN.DigitalLearning.Application.Interfaces;
 using GGHN.DigitalLearning.Domain.Entities;
 using GGHN.DigitalLearning.Domain.Enums;
@@ -46,7 +47,7 @@ public class AuthService : IAuthService
 
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
-            throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
+            throw new RegistrationValidationException(TransformIdentityErrors(result.Errors));
 
         await _userManager.AddToRoleAsync(user, "FreeUser");
 
@@ -65,8 +66,28 @@ public class AuthService : IAuthService
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
-            throw new UnauthorizedAccessException("Invalid email or password.");
+
+        if (user == null)
+            throw new InvalidCredentialsException();
+
+        if (await _userManager.IsLockedOutAsync(user))
+            throw new AccountLockoutException(user.LockoutEnd);
+
+        if (!user.EmailConfirmed)
+            throw new EmailNotConfirmedException(user.Email!);
+
+        var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
+        if (!passwordValid)
+        {
+            await _userManager.AccessFailedAsync(user);
+
+            if (await _userManager.IsLockedOutAsync(user))
+                throw new AccountLockoutException(user.LockoutEnd);
+
+            throw new InvalidCredentialsException();
+        }
+
+        await _userManager.ResetAccessFailedCountAsync(user);
 
         var roles = await _userManager.GetRolesAsync(user);
         var (accessToken, expiresAt) = await GenerateAccessTokenAsync(user);
@@ -220,6 +241,38 @@ public class AuthService : IAuthService
 
         var roles = await _userManager.GetRolesAsync(user);
         return MapToUserDto(user, roles);
+    }
+
+    public async Task ResendEmailConfirmationAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null || user.EmailConfirmed)
+            return;
+
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        // TODO: Send email with confirmation link containing token.
+    }
+
+    private static List<string> TransformIdentityErrors(IEnumerable<IdentityError> errors)
+    {
+        var friendly = new List<string>();
+        foreach (var error in errors)
+        {
+            var message = error.Code switch
+            {
+                "PasswordTooShort" => "Password must be at least 8 characters long.",
+                "PasswordRequiresNonAlphanumeric" => "Password must include at least one special character (e.g. !@#$%).",
+                "PasswordRequiresDigit" => "Password must include at least one number.",
+                "PasswordRequiresLower" => "Password must include at least one lowercase letter.",
+                "PasswordRequiresUpper" => "Password must include at least one uppercase letter.",
+                "PasswordRequiresUniqueChars" => "Password must not contain repeated characters.",
+                "DuplicateUserName" or "DuplicateEmail" => "An account with this email already exists.",
+                "InvalidEmail" => "Please enter a valid email address.",
+                _ => error.Description
+            };
+            friendly.Add(message);
+        }
+        return friendly;
     }
 
     private async Task<(string token, DateTime expiresAt)> GenerateAccessTokenAsync(ApplicationUser user)
