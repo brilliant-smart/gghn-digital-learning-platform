@@ -15,4 +15,5 @@ public interface IAuthService
     Task<bool> UpdateUserTierAsync(string userId, string tier);
     Task<bool> DeleteUserAsync(string userId);
     Task<UserDto> UpdateProfileAsync(string userId, UpdateProfileRequest request);
+    Task ResendEmailConfirmationAsync(string email);
 }
