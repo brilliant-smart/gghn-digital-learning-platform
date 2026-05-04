@@ -427,6 +427,7 @@ async Task SeedAsync(IServiceProvider services, bool resetOnStartup = false)
         };
 
         dbContext.Speakers.AddRange(speakers);
+        await dbContext.SaveChangesAsync();
     }
 
     if (!await dbContext.Conferences.AnyAsync())

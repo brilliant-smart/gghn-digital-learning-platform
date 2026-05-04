@@ -39,6 +39,12 @@ const apiProxyPlugin: Plugin = {
 
 export default defineConfig({
   plugins: [apiProxyPlugin],
+  cloudflare: false,
+  tanstackStart: {
+    server: {
+      preset: "vercel",
+    },
+  },
   vite: {
     server: {
       proxy: {
