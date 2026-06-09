@@ -79,6 +79,11 @@ $RECYCLE.BIN/
 .wrangler/
 .dev.vars
 
+# === Generated docs & scripts ===
+*.pptx
+*.pdf
+create_*.py
+
 # === Misc ===
 *.tmp
 *.temp
